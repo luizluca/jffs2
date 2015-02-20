@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+# jffs2extract is free software: you can
+# redistribute it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, version 2.
+
+import logging
+from optparse import OptionParser
+
+from jffs2.jffs2 import JFFS2
+
+
+def main():
+    parser = OptionParser(usage="jffs2extract -o <outdir> <image>")
+
+    parser.add_option("-o", "--outdir", help="Directory to dump image to",
+                      default=None)
+    parser.add_option("-V", "--verbose", help="Be verbose",
+                      dest="verbose", action="store_true", default=False)
+
+    (options, args) = parser.parse_args()
+
+    if options.verbose:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+
+    logging.basicConfig(format=("%(asctime)s:%(name)s:%(levelname)s:"
+                                "%(message)s"),
+                        level=level)
+
+    if not options.outdir:
+        print("Needs output directory")
+
+    for i in args:
+        jffs = JFFS2(i)
+        jffs.scan()
+        jffs.dump(options.outdir)
+
+if __name__ == '__main__':
+    main()

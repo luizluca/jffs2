@@ -1,0 +1,11 @@
+Python module for handling JFFS2
+================================
+
+This module reads in JFFS2 dirents and inodes. 
+
+jffs2extract tool dumps the whole JFFS2 image contents to disk.
+
+In order to have LZO support, you need to have python-lzo installed,
+which does not seem to be available from pypi, but can be downloaded from
+https://github.com/jd-boyd/python-lzo
+
