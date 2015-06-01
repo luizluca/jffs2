@@ -83,6 +83,13 @@ class JFFS2:
     def __init__(self, image):
         with open(image, 'rb') as self.fd:
             self.image = mmap.mmap(self.fd.fileno(), 0, prot=mmap.PROT_READ)
+            initial, = struct.unpack('<H', self.image[0:2])
+            if initial == 0x8519:
+                self.endian = ">"
+                logger.debug("Little endian detected")
+            else:
+                self.endian = "<"
+                logger.debug("Big endian detected")
 
         self.dirents = {}
         self.inodes = defaultdict(list)
@@ -102,7 +109,7 @@ class JFFS2:
         if len(mm) < 28:
             return False
 
-        pino, version, ino, mctime, nsize, ntype, unused, node_crc, name_crc = struct.unpack("<LLLLBBHLL", mm[0:28])
+        pino, version, ino, mctime, nsize, ntype, unused, node_crc, name_crc = struct.unpack("%sLLLLBBHLL"%self.endian, mm[0:28])
 
         if 28+nsize > len(mm):
             return False
@@ -137,7 +144,7 @@ class JFFS2:
         # uint8_t data[0];
         (ino, version, mode, uid, gid, isize, atime, mtime, ctime, offset,
          csize, dsize, compr, usercompr, flags, data_crc, node_crc
-         ) = struct.unpack("<LLLHHLLLLLLLBBHLL", mm[0:56])
+         ) = struct.unpack("%sLLLHHLLLLLLLBBHLL"%self.endian, mm[0:56])
 
         if csize > len(mm[56:]):
             return False
@@ -156,7 +163,7 @@ class JFFS2:
         maxmm = len(self.image)
 
         while idx < maxmm-12:
-            magic, nodetype, totlen, hdh_crc = struct.unpack("<HHLL", mm[idx:idx+12])
+            magic, nodetype, totlen, hdh_crc = struct.unpack("%sHHLL"%self.endian, mm[idx:idx+12])
             if magic != 0x1985:
                 idx += 4
                 continue
