@@ -182,7 +182,11 @@ class JFFS2:
 
     def dump_file(self, name, node):
         logger.info("Writing file %s" % name)
-        mkdir_p(os.path.dirname(name))
+        try:
+            mkdir_p(os.path.dirname(name))
+        except OSError:
+            logger.critical("Failed to created directory for {name}".format(name=name))
+            return
 
         with open(name, "wb") as wfd:
             inodes = self.inodes[node]
@@ -250,7 +254,11 @@ class JFFS2:
             if ntype == DT_REG:
                 self.dump_file(os.path.join(target, name), i)
             elif ntype == DT_DIR:
-                mkdir_p(os.path.join(target, name))
+                try:
+                    mkdir_p(os.path.join(target, name))
+                except OSError:
+                    logger.critical("Failed to created directory for {name}".format(name=name))
+            
 
 
 def main():
