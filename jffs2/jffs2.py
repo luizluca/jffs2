@@ -22,6 +22,19 @@ try:
 except ImportError:
     lzo = None
 
+try:
+	import lzma
+	LZMA_BEST_LC = 0
+	LZMA_BEST_LP = 0
+	LZMA_BEST_PB = 0
+	pb = LZMA_BEST_PB
+	lp = LZMA_BEST_LP
+	lc = LZMA_BEST_LC
+	PROPERTIES = (pb * 5 + lp) * 9 + lc
+	DICT_SIZE = 0x2000
+except ImportError:
+    lzma = None
+
 
 def PAD(x):
     if x % 4:
@@ -42,6 +55,7 @@ JFFS2_COMPR_COPY = 0x04
 JFFS2_COMPR_DYNRUBIN = 0x05
 JFFS2_COMPR_ZLIB = 0x06
 JFFS2_COMPR_LZO = 0x07
+JFFS2_COMPR_LZMA = 0x08
 
 
 def mkdir_p(path):
@@ -221,6 +235,18 @@ class JFFS2:
                     except lzo.error as e:
                         logger.critical("Failed to decompress lzo, dumping raw (%s)" % str(e))
                         wfd.write(self.image[dataidx:dataidx+csize])
+                elif compr == JFFS2_COMPR_LZMA:
+                    compressed = self.image[dataidx:dataidx+csize]
+                    if lzma is None:
+                        logger.critical("No lzma installed!")
+                    try:
+                        lzma_header = struct.pack('<BIQ', PROPERTIES, DICT_SIZE, dsize)
+                        lzma_data = lzma_header + compressed
+                        decompr = lzma.decompress(lzma_data)
+                        wfd.write(decompr)
+                    except lzma.error as e:
+                        logger.critical("Failed to decompress lzma, dumping raw (%s)" % str(e))
+                        wfd.write(compressed)
                 else:
                     logger.critical("Unknown compression %d" % compr)
         os.utime(name, (ts, ts))
