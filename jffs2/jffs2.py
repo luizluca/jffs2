@@ -43,6 +43,7 @@ def PAD(x):
 
 JFFS2_NODETYPE_DIRENT = 0xE001
 JFFS2_NODETYPE_INODE = 0xE002
+JFFS2_NODETYPE_CLEANMARKER = 0x2003
 
 DT_DIR = 4
 DT_REG = 8
@@ -101,9 +102,12 @@ class JFFS2:
             if initial == 0x8519:
                 self.endian = ">"
                 logger.debug("Little endian detected")
-            else:
+            elif initial == 0x1985:
                 self.endian = "<"
                 logger.debug("Big endian detected")
+            else:
+                logger.critical("Unknown format!")
+                raise
 
         self.dirents = {}
         self.inodes = defaultdict(list)
@@ -189,8 +193,10 @@ class JFFS2:
                 self.scan_dirent(mm[idx+12:idx+totlen])
             elif nodetype == JFFS2_NODETYPE_INODE:
                 self.scan_inode(mm[idx+12:idx+totlen], idx+12)
+            elif nodetype == JFFS2_NODETYPE_CLEANMARKER:
+                logger.debug("Clean Marker at 0x%X!" % idx)
             else:
-                logger.debug("Unknown nodetype")
+                logger.debug("Unknown nodetype at 0x%X: 0x%X" % (idx, nodetype))
 
             idx += PAD(totlen)
 
